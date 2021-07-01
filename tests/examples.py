@@ -1,14 +1,6 @@
 import numpy as np
 
 
-# def test_quad_func(Q, x):
-#     x_dim = np.ndim(x)
-#     q_dim = np.ndim(Q)  # the real dimention of the problem
-#     # first dim of x must comply with Q
-#     val = np.dot(x, np.dot(Q, x))
-#     return val
-
-
 def quadratic_func(Q, x, calc_hessian):
     # generic quadric function xT * Q * x
     val = np.dot(x, np.dot(Q, x))

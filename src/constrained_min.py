@@ -1,7 +1,6 @@
 
 import numpy as np
 from src import utils
-from src import unconstrained_min
 
 
 def interior_pt(func, ineq_constraints, eq_constraints_mat, eq_constraints_rhs, x0):

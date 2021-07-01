@@ -4,6 +4,8 @@ import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from fpdf import FPDF  # fpdf class
+import os
+import datetime
 
 
 class PDF(FPDF):
@@ -29,12 +31,12 @@ def make_report(report_str, title_str, f, full_path, ineq_constraints=None, eq_c
     if x_dim == 2:
         ax1 = fig.add_subplot(211)
         # plot convergence path
-        plot_2d_contours(f, full_path, ax1, ineq_constraints)
+        plot_2d_contours_and_path(f, full_path, ax1, ineq_constraints)
     elif x_dim == 3:
         ax1 = fig.add_subplot(211, projection='3d')
         # plot convergence path
-        plot_3d_feasible_region(ineq_constraints, eq_constraints_mat, eq_constraints_rhs, ax1, full_path)
-        draw_3d_path(full_path, ax1)
+        plot_3d_feasible_region_and_path(ineq_constraints, eq_constraints_mat, eq_constraints_rhs, ax1, full_path)
+        # ax1.legend() # commented because of a library bug in matplotlib, can work if running with breakpoint
     else:
         raise Exception("cannot make plot, Unsupported dimension")
 
@@ -43,18 +45,25 @@ def make_report(report_str, title_str, f, full_path, ineq_constraints=None, eq_c
     plot_objective_vs_iterations(f, full_path, ax2)
 
     # save figure
-    fig.savefig(title_str + '.png')
+    # path tp save:
+    dtime = datetime.datetime.now()
+    fig_fname = 'results' + os.path.sep + title_str + '.png'
+
+    fig.savefig(fig_fname)
     # add figure to PDF
     pdf = PDF()
     pdf.add_page()
-    pdf.image(title_str + '.png', x=10, y=20, w=170, h=220)
+    pdf.image(fig_fname, x=10, y=20, w=170, h=220)
     pdf.titles(title_str, 0, 0)
     pdf.texts(10.0, 240.0, report_str, size=10)
-    pdf.output(title_str + '.pdf', 'F')
-    # TODO delete figure
+    time_str = str(dtime.day) + '_' + str(dtime.month) + '_' + str(dtime.year) + '_' + str(dtime.hour) + '_' + str(dtime.minute) + '_' + str(dtime.second) + '_'
+    pdf_fname = 'results' + os.path.sep + time_str + title_str + '.pdf'
+    pdf.output(pdf_fname, 'F')
+    # delete figure
+    os.remove(fig_fname)
 
 
-def plot_2d_contours(f0, full_path, ax, ineq_constraints):
+def plot_2d_contours_and_path(f0, full_path, ax, ineq_constraints):
     # determine x bounds
     x_lower = np.min(full_path[:, 0])
     x_upper = np.max(full_path[:, 0])
@@ -86,8 +95,8 @@ def plot_2d_contours(f0, full_path, ax, ineq_constraints):
                     F[ii, jj] *= (val <= 0)
 
     # plot contours
-    CS = ax.contour(X, Y, Z)
-    ax.clabel(CS, inline=True, fontsize=10)
+    CS1 = ax.contour(X, Y, Z)
+    ax.clabel(CS1, inline=True, fontsize=10)
     arrow_width = np.max([y_upper - y_lower, x_upper - x_lower]) / 600
     draw_2d_path(full_path, ax, arrow_width)
     # plot feasible region
@@ -125,11 +134,12 @@ def draw_3d_path(full_path, ax):
     # draw path
     X, Y, Z = zip(*full_path[:-1, :])
     U, V, W = zip(*(full_path[1:, :] - full_path[:-1, :]))
-    ax.quiver(X, Y, Z, U, V, W, color='red')
+    cest2 = ax.quiver(X, Y, Z, U, V, W, color='red')
     ax.set_title('Convergence Path')
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_zlabel('z')
+    cest2.set_label('Path')
 
 
 def report_iteration(iter_num, xi, func_val, step_len, obj_val_change):
@@ -151,15 +161,18 @@ def plot_objective_vs_iterations(f, full_path, ax):
     ax.grid(b=True, which='both', axis='both')
 
 
-def plot_3d_feasible_region(ineq_constraints, eq_constraints_mat, eq_constraints_rhs, ax, full_path):
+def plot_3d_feasible_region_and_path(ineq_constraints, eq_constraints_mat, eq_constraints_rhs, ax, full_path):
     # constraints are function of numpy array x (3d)
     # determine bounds
+
     if True:
         # temporary non-generic plot for our qp problem, TODO make generic version
         triangles = [((0, 0, 1), (0, 1, 0), (1, 0, 0))]
-        ax.add_collection(Poly3DCollection(triangles, alpha=0.4))
+        cest1 = ax.add_collection(Poly3DCollection(triangles, alpha=0.4))
+        cest1.set_label('Feasible Region')
     else:
         # generic way to plot feasible region, but less pretty so not using it for submission
+        # determine bounds
         xyz_lower = np.min(full_path)
         xyx_upper = np.max(full_path)
         tmp_range = xyx_upper - xyz_lower
@@ -180,6 +193,8 @@ def plot_3d_feasible_region(ineq_constraints, eq_constraints_mat, eq_constraints
         ax.set_xlim(xyz_lower, xyx_upper)
         ax.set_ylim(xyz_lower, xyx_upper)
         ax.set_zlim(xyz_lower, xyx_upper)
+    # draw convergence path
+    draw_3d_path(full_path, ax)
 
 
 def helper_plot_hyperplane(ax, a, b, x_range, y_range, z_range, color):

@@ -12,7 +12,7 @@ class TestGradDescend(unittest.TestCase):
         max_iter = 500
         param_tol = 10**-8
         obj_tol = 10**-12
-        init_step_len = 0.1
+        init_step_len = 1.0
         slope_ratio = 1e-4
         back_track_factor = 0.2
         for dir_selection_method in ['nt', 'bfgs']:
@@ -33,7 +33,7 @@ class TestGradDescend(unittest.TestCase):
         max_iter = 14000
         param_tol = 10**-8
         obj_tol = 10**-7
-        init_step_len = 0.001
+        init_step_len = 1.0
         slope_ratio = 1e-4
         back_track_factor = 0.2
         func_str = 'Rosenbrock Function'
@@ -51,7 +51,7 @@ class TestGradDescend(unittest.TestCase):
     def test_lin_min(self):
         func = examples.lin_func
         x0 = np.array([1.0, 1.0])
-        init_step_len = 0.1
+        init_step_len = 1.0
         slope_ratio = 1e-4
         back_track_factor = 0.2
         max_iter = 100
